@@ -4,3 +4,6 @@
 ; [submodule "third_party/material-design-icons"]
 ; 	path = third_party/material-design-icons
 ; 	url = https://github.com/google/material-design-icons
+[submodule "third_party/fonts"]
+	path = third_party/fonts
+	url = https://github.com/google/fonts
