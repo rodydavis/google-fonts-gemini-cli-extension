@@ -8,6 +8,9 @@ import {
   searchIcons,
   getDatabaseStats,
   getDatabase,
+  searchFontTags,
+  getIconCategories,
+  getIconStyles,
 } from "../scripts/query-db.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -102,5 +105,23 @@ test("query-db functions", async (t) => {
         "should match the filtered category using LIKE and be case-insensitive",
       );
     }
+  });
+
+  await t.test("searchFontTags returns tags", () => {
+    const allTags = searchFontTags({});
+    assert(allTags.length > 0, "should return some tags without filters");
+
+    const displayTags = searchFontTags({ name: "dIs" });
+    assert(displayTags.length > 0, "should find display tag");
+  });
+
+  await t.test("getIconCategories returns categories", () => {
+    const categories = getIconCategories();
+    assert(categories.length > 0, "should return some categories");
+  });
+
+  await t.test("getIconStyles returns styles", () => {
+    const styles = getIconStyles();
+    assert(styles.length > 0, "should return some styles");
   });
 });

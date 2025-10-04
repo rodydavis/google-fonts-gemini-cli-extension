@@ -30,25 +30,30 @@ export function searchFonts({
   const db = getDatabase();
   let query = "SELECT * FROM fonts";
   const where = [];
+  const params = [];
   if (name) {
-    where.push(`family LIKE '%${name}%' COLLATE NOCASE`);
+    where.push(`family LIKE ? COLLATE NOCASE`);
+    params.push(`%${name}%`);
   }
   if (category) {
-    where.push(`category LIKE '%${category}%' COLLATE NOCASE`);
+    where.push(`category LIKE ? COLLATE NOCASE`);
+    params.push(`%${category}%`);
   }
   if (is_variable !== undefined) {
-    where.push(`is_variable = ${is_variable ? 1 : 0}`);
+    where.push(`is_variable = ?`);
+    params.push(is_variable ? 1 : 0);
   }
   if (tag) {
     query +=
       " INNER JOIN font_tags ON fonts.id = font_tags.font_id INNER JOIN tags ON font_tags.tag_id = tags.id";
-    where.push(`tags.name LIKE '%${tag}%' COLLATE NOCASE`);
+    where.push(`tags.name LIKE ? COLLATE NOCASE`);
+    params.push(`%${tag}%`);
   }
   if (where.length > 0) {
     query += " WHERE " + where.join(" AND ");
   }
   const stmt = db.prepare(query);
-  const rows = stmt.all();
+  const rows = stmt.all(...params);
   db.close();
   return rows;
 }
@@ -66,16 +71,58 @@ export function searchIcons({
   const db = getDatabase();
   let query = "SELECT * FROM icons";
   const where = [];
+  const params = [];
   if (name) {
-    where.push(`name LIKE '%${name}%' COLLATE NOCASE`);
+    where.push(`name LIKE ? COLLATE NOCASE`);
+    params.push(`%${name}%`);
   }
   if (category) {
-    where.push(`category LIKE '%${category}%' COLLATE NOCASE`);
+    where.push(`category LIKE ? COLLATE NOCASE`);
+    params.push(`%${category}%`);
   }
   if (where.length > 0) {
     query += " WHERE " + where.join(" AND ");
   }
   const stmt = db.prepare(query);
+  const rows = stmt.all(...params);
+  db.close();
+  return rows;
+}
+
+/**
+ * Search for font tags in the database
+ */
+export function searchFontTags({ name }: { name?: string }) {
+  const db = getDatabase();
+  let query = "SELECT name FROM tags";
+  const params = [];
+  if (name) {
+    query += ` WHERE name LIKE ? COLLATE NOCASE`;
+    params.push(`%${name}%`);
+  }
+  const stmt = db.prepare(query);
+  const rows = stmt.all(...params);
+  db.close();
+  return rows;
+}
+
+/**
+ * Get all icon categories
+ */
+export function getIconCategories() {
+  const db = getDatabase();
+  const stmt = db.prepare("SELECT DISTINCT category FROM icons");
+  const rows = stmt.all();
+  db.close();
+  return rows;
+}
+
+/**
+ * Get all icon styles
+ */
+export function getIconStyles() {
+  const db = getDatabase();
+  const stmt = db.prepare("SELECT DISTINCT style FROM icon_variants");
   const rows = stmt.all();
   db.close();
   return rows;

@@ -1,7 +1,13 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { searchFonts, searchIcons } from "./query-db.js";
+import {
+  searchFonts,
+  searchIcons,
+  searchFontTags,
+  getIconCategories,
+  getIconStyles,
+} from "./query-db.ts";
 
 const server = new McpServer({
   name: "google-fonts-server",
@@ -43,6 +49,66 @@ server.registerTool(
   },
   async ({ name, category }) => {
     const rows = searchIcons({ name, category });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(rows),
+        },
+      ],
+    };
+  },
+);
+
+server.registerTool(
+  "search_font_tags",
+  {
+    description: "Searches for font tags in the Google Fonts database.",
+    inputSchema: z.object({
+      name: z.string().optional(),
+    }).shape,
+  },
+  async ({ name }) => {
+    const rows = searchFontTags({ name });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(rows),
+        },
+      ],
+    };
+  },
+);
+
+server.registerTool(
+  "get_icon_categories",
+  {
+    description:
+      "Gets all icon categories from the Google Fonts icons database.",
+    inputSchema: z.object({}).shape,
+  },
+  async () => {
+    const rows = getIconCategories();
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(rows),
+        },
+      ],
+    };
+  },
+);
+
+server.registerTool(
+  "get_icon_styles",
+  {
+    description: "Gets all icon styles from the Google Fonts icons database.",
+    inputSchema: z.object({}).shape,
+  },
+  async () => {
+    const rows = getIconStyles();
     return {
       content: [
         {
