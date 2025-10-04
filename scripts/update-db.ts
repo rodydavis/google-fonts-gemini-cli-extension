@@ -21,7 +21,7 @@ interface Font {
 
 interface IconVariant {
   style: string;
-  path: string;
+  paths: string[];
 }
 
 interface Icon {
@@ -269,7 +269,9 @@ async function main() {
     }
 
     for (const variant of variants) {
-      insertIconVariant.run(icon_id.id, variant.style, variant.path);
+      for (const path of variant.paths) {
+        insertIconVariant.run(icon_id.id, variant.style, path);
+      }
     }
   }
 

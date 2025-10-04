@@ -9,7 +9,7 @@ const iconsSrc = resolve(root, "third_party/icons/src");
 
 interface IconVariant {
   style: string;
-  path: string;
+  paths: string[];
 }
 
 interface Icon {
@@ -31,12 +31,14 @@ function main() {
       for (const style of styles) {
         const stylePath = join(iconPath, style);
         const svgs = readdirSync(stylePath);
+        const paths: string[] = [];
         for (const svg of svgs) {
-          variants.push({
-            style: style,
-            path: join(category, iconName, style, svg),
-          });
+          paths.push(join(category, iconName, style, svg));
         }
+        variants.push({
+          style: style,
+          paths: paths,
+        });
       }
       icons.push({
         name: iconName,
