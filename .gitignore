@@ -1,3 +1,6 @@
 .env
 google-fonts.json
 node_modules/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

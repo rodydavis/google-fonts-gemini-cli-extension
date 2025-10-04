@@ -5,7 +5,10 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "download:fonts": "node scripts/download-fonts.ts"
+    "download:fonts": "node scripts/download-fonts.ts",
+    "update-db": "node scripts/update-db.ts",
+    "query-db": "node scripts/query-db.ts",
+    "test": "node test/test.ts"
   },
   "keywords": [],
   "author": "",
