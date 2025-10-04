@@ -4,4 +4,4 @@ This uses the latest version of Node.js that can run files without compiling `no
 
 All the scripts are in the scripts/ directory.
 
-Update package.json for new scripts.
+Tests are in test directory and must have a .test.ts extension.

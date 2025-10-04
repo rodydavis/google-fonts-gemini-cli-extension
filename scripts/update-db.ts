@@ -1,7 +1,7 @@
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { readFileSync } from "fs";
+import { readFileSync, unlinkSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -20,7 +20,15 @@ interface Font {
 }
 
 function main() {
-  const db = new DatabaseSync(resolve(root, "google_fonts.sqlite"));
+  const dbPath = resolve(root, "google_fonts.sqlite");
+  try {
+    unlinkSync(dbPath);
+  } catch (err: any) {
+    if (err.code !== "ENOENT") {
+      throw err;
+    }
+  }
+  const db = new DatabaseSync(dbPath);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS fonts (
