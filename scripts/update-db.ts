@@ -1,7 +1,8 @@
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { readFileSync, unlinkSync } from "fs";
+import { createReadStream, readFileSync, unlinkSync } from "fs";
+import Papa from "papaparse";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -14,12 +15,22 @@ interface Font {
   category: string;
   version: string;
   lastModified: string;
-  popularity: number;
-  defaultVariant: string;
+  defaultVariant?: string;
   isVariable: boolean;
 }
 
-function main() {
+interface IconVariant {
+  style: string;
+  path: string;
+}
+
+interface Icon {
+  name: string;
+  category: string;
+  variants: IconVariant[];
+}
+
+async function main() {
   const dbPath = resolve(root, "google_fonts.sqlite");
   try {
     unlinkSync(dbPath);
@@ -38,7 +49,6 @@ function main() {
       category TEXT,
       version TEXT,
       last_modified TEXT,
-      popularity INTEGER,
       default_variant TEXT,
       is_variable BOOLEAN
     )
@@ -58,11 +68,59 @@ function main() {
     )
   `);
 
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      description TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS font_tags (
+      font_id INTEGER,
+      tag_id INTEGER,
+      value REAL,
+      FOREIGN KEY (font_id) REFERENCES fonts (id),
+      FOREIGN KEY (tag_id) REFERENCES tags (id),
+      PRIMARY KEY (font_id, tag_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS variant_tags (
+      variant_id INTEGER,
+      tag_id INTEGER,
+      value REAL,
+      FOREIGN KEY (variant_id) REFERENCES variants (id),
+      FOREIGN KEY (tag_id) REFERENCES tags (id),
+      PRIMARY KEY (variant_id, tag_id)
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS icons (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      category TEXT
+    )
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS icon_variants (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      icon_id INTEGER,
+      style TEXT NOT NULL,
+      path TEXT NOT NULL,
+      FOREIGN KEY (icon_id) REFERENCES icons (id)
+    )
+  `);
+
   const fontsJson = readFileSync(resolve(root, "google-fonts.json"), "utf-8");
   const fonts: Font[] = JSON.parse(fontsJson).items;
 
   const insertFont = db.prepare(
-    "INSERT OR IGNORE INTO fonts (family, subsets, category, version, last_modified, popularity, default_variant, is_variable) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT OR IGNORE INTO fonts (family, subsets, category, version, last_modified, default_variant, is_variable) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
   const insertVariant = db.prepare(
     "INSERT OR IGNORE INTO variants (font_id, name, style, weight, local_path, url, format) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -76,7 +134,6 @@ function main() {
       category,
       version,
       lastModified,
-      popularity,
       defaultVariant,
       isVariable,
     } = font;
@@ -88,8 +145,7 @@ function main() {
         category,
         version,
         lastModified,
-        popularity,
-        defaultVariant,
+        defaultVariant ?? "regular",
         isVariable ? 1 : 0,
       );
       font_id = { id: info.lastInsertRowid as number };
@@ -111,6 +167,109 @@ function main() {
         url,
         "woff2",
       );
+    }
+  }
+
+  const insertTag = db.prepare(
+    "INSERT OR IGNORE INTO tags (name, description) VALUES (?, ?)",
+  );
+  const selectTag = db.prepare("SELECT id FROM tags WHERE name = ?");
+  const tagsMetadata = readFileSync(
+    resolve(root, "third_party/fonts/tags/tags_metadata.csv"),
+    "utf-8",
+  );
+  const tags = Papa.parse(tagsMetadata).data as string[][];
+  for (const tag of tags) {
+    if (tag && tag.length >= 4 && tag[0] && tag[3]) {
+      insertTag.run(tag[0], tag[3]);
+    }
+  }
+
+  const insertFontTag = db.prepare(
+    "INSERT OR IGNORE INTO font_tags (font_id, tag_id, value) VALUES (?, ?, ?)",
+  );
+  const familiesStream = createReadStream(
+    resolve(root, "third_party/fonts/tags/all/families.csv"),
+  );
+  await new Promise<void>((resolve) => {
+    Papa.parse(familiesStream, {
+      worker: true,
+      step: (results) => {
+        const row = results.data as string[];
+        if (row && row.length >= 4 && row[0] && row[2] && row[3]) {
+          const font = selectFont.get(row[0]) as { id: number } | undefined;
+          if (font) {
+            const tag = selectTag.get(row[2]) as { id: number } | undefined;
+            if (tag) {
+              insertFontTag.run(font.id, tag.id, parseFloat(row[3]));
+            }
+          }
+        }
+      },
+      complete: () => {
+        resolve();
+      },
+    });
+  });
+
+  const insertVariantTag = db.prepare(
+    "INSERT OR IGNORE INTO variant_tags (variant_id, tag_id, value) VALUES (?, ?, ?)",
+  );
+  const selectVariant = db.prepare(
+    "SELECT id FROM variants WHERE font_id = ? AND weight = ? AND style = ?",
+  );
+  const quantStream = createReadStream(
+    resolve(root, "third_party/fonts/tags/all/quant.csv"),
+  );
+  await new Promise<void>((resolve) => {
+    Papa.parse(quantStream, {
+      worker: true,
+      step: (results) => {
+        const row = results.data as string[];
+        if (row && row.length >= 4 && row[0] && row[1] && row[2] && row[3]) {
+          const font = selectFont.get(row[0]) as { id: number } | undefined;
+          if (font) {
+            const style = row[1].includes("ital") ? "italic" : "normal";
+            const weight = parseInt(row[1].split("@")[1]);
+            const variant = selectVariant.get(font.id, weight, style) as
+              | { id: number }
+              | undefined;
+            if (variant) {
+              const tag = selectTag.get(row[2]) as { id: number } | undefined;
+              if (tag) {
+                insertVariantTag.run(variant.id, tag.id, parseFloat(row[3]));
+              }
+            }
+          }
+        }
+      },
+      complete: () => {
+        resolve();
+      },
+    });
+  });
+
+  const iconsJson = readFileSync(resolve(root, "icons.json"), "utf-8");
+  const icons: Icon[] = JSON.parse(iconsJson);
+
+  const insertIcon = db.prepare(
+    "INSERT OR IGNORE INTO icons (name, category) VALUES (?, ?)",
+  );
+  const selectIcon = db.prepare("SELECT id FROM icons WHERE name = ?");
+  const insertIconVariant = db.prepare(
+    "INSERT OR IGNORE INTO icon_variants (icon_id, style, path) VALUES (?, ?, ?)",
+  );
+
+  for (const icon of icons) {
+    const { name, category, variants } = icon;
+    let icon_id = selectIcon.get(name) as { id: number } | undefined;
+    if (!icon_id) {
+      const info = insertIcon.run(name, category);
+      icon_id = { id: info.lastInsertRowid as number };
+    }
+
+    for (const variant of variants) {
+      insertIconVariant.run(icon_id.id, variant.style, variant.path);
     }
   }
 

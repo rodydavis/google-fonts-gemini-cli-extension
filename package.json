@@ -16,9 +16,12 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^24.6.2",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "papaparse": "^5.5.3",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.3.16",
     "typescript": "^5.9.3"
   }
 }
