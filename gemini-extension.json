@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "contextFileName": "GEMINI.md",
   "mcpServers": {
-    "nodeServer": {
+    "google-fonts-local-mcp": {
       "command": "node",
       "args": ["${extensionPath}${/}scripts${/}server.ts"],
       "cwd": "${extensionPath}"
