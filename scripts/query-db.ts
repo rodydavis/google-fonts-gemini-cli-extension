@@ -31,10 +31,10 @@ export function searchFonts({
   let query = "SELECT * FROM fonts";
   const where = [];
   if (name) {
-    where.push(`family LIKE '%${name}%'`);
+    where.push(`family LIKE '%${name}%' COLLATE NOCASE`);
   }
   if (category) {
-    where.push(`category = '${category}'`);
+    where.push(`category LIKE '%${category}%' COLLATE NOCASE`);
   }
   if (is_variable !== undefined) {
     where.push(`is_variable = ${is_variable ? 1 : 0}`);
@@ -42,7 +42,7 @@ export function searchFonts({
   if (tag) {
     query +=
       " INNER JOIN font_tags ON fonts.id = font_tags.font_id INNER JOIN tags ON font_tags.tag_id = tags.id";
-    where.push(`tags.name = '${tag}'`);
+    where.push(`tags.name LIKE '%${tag}%' COLLATE NOCASE`);
   }
   if (where.length > 0) {
     query += " WHERE " + where.join(" AND ");
@@ -67,10 +67,10 @@ export function searchIcons({
   let query = "SELECT * FROM icons";
   const where = [];
   if (name) {
-    where.push(`name LIKE '%${name}%'`);
+    where.push(`name LIKE '%${name}%' COLLATE NOCASE`);
   }
   if (category) {
-    where.push(`category = '${category}'`);
+    where.push(`category LIKE '%${category}%' COLLATE NOCASE`);
   }
   if (where.length > 0) {
     query += " WHERE " + where.join(" AND ");

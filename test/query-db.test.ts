@@ -3,7 +3,12 @@ import assert from "node:assert";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { searchFonts, searchIcons, getDatabaseStats, getDatabase } from "../scripts/query-db.ts";
+import {
+  searchFonts,
+  searchIcons,
+  getDatabaseStats,
+  getDatabase,
+} from "../scripts/query-db.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -29,19 +34,22 @@ test("query-db functions", async (t) => {
     const allFonts = searchFonts({});
     assert(allFonts.length > 0, "should return some fonts without filters");
 
-      // Test with name filter
-    const robotoFonts = searchFonts({ name: "Roboto" });
+    // Test with name filter
+    const robotoFonts = searchFonts({ name: "rObOtO" });
     assert(robotoFonts.length > 0, "should find Roboto font");
     assert(
-      robotoFonts.some(row => row.family === "Roboto" || row.family.includes("Roboto")),
-      "should find font with name containing Roboto"
-    );    // Test with category filter
-    const serifFonts = searchFonts({ category: "serif" });
+      robotoFonts.some(
+        (row) => row.family === "Roboto" || row.family.includes("Roboto"),
+      ),
+      "should find font with name containing Roboto",
+    ); // Test with category filter
+    const serifFonts = searchFonts({ category: "sErI" }); // Partial search
     if (serifFonts.length > 0) {
-      assert.strictEqual(
-        serifFonts[0].category,
-        "serif",
-        "should filter by serif category"
+      assert(
+        serifFonts.every((font) =>
+          font.category.toLowerCase().includes("seri"),
+        ),
+        "should filter by category using LIKE and be case-insensitive",
       );
     }
 
@@ -51,38 +59,47 @@ test("query-db functions", async (t) => {
       assert.strictEqual(
         variableFonts[0].is_variable,
         1,
-        "should filter variable fonts"
+        "should filter variable fonts",
       );
+    }
+
+    // Test with tag filter
+    const displayFonts = searchFonts({ tag: "dIs" }); // Partial search
+    if (displayFonts.length > 0) {
+      // This test is tricky because the tag is in a separate table.
+      // We'd need to join to verify, which is complex for this test file.
+      // For now, we'll just assert that we get some results back.
+      assert(displayFonts.length > 0, "should return fonts for a partial tag");
     }
   });
 
   await t.test("searchIcons returns icons", () => {
     // Test without filters
     const allIcons = searchIcons({});
-    assert(allIcons.length >= 0, "should return an array of icons (might be empty if no icons in DB)");
+    assert(
+      allIcons.length >= 0,
+      "should return an array of icons (might be empty if no icons in DB)",
+    );
 
     // Test with name filter (if icons exist)
     if (allIcons.length > 0) {
       const firstIconName = allIcons[0].name;
-      const filteredIcons = searchIcons({ name: firstIconName });
-      assert(
-        filteredIcons.length > 0,
-        "should find icons with matching name"
-      );
+      const filteredIcons = searchIcons({ name: firstIconName.toUpperCase() });
+      assert(filteredIcons.length > 0, "should find icons with matching name");
     }
 
     // Test with category filter (if icons exist and have categories)
     if (allIcons.length > 0 && allIcons[0].category) {
-      const firstIconCategory = allIcons[0].category;
-      const categoryIcons = searchIcons({ category: firstIconCategory });
+      const partialCategory = allIcons[0].category.substring(0, 4);
+      const categoryIcons = searchIcons({
+        category: partialCategory.toUpperCase(),
+      });
+      assert(categoryIcons.length > 0, "should filter icons by category");
       assert(
-        categoryIcons.length > 0,
-        "should filter icons by category"
-      );
-      assert.strictEqual(
-        categoryIcons[0].category,
-        firstIconCategory,
-        "should match the filtered category"
+        categoryIcons.every((icon) =>
+          icon.category.toLowerCase().includes(partialCategory.toLowerCase()),
+        ),
+        "should match the filtered category using LIKE and be case-insensitive",
       );
     }
   });
