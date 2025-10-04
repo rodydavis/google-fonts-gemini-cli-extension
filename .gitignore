@@ -2,7 +2,7 @@
 google-fonts.json
 icons.json
 node_modules/
-*.sqlite
+#*.sqlite
 *.sqlite-shm
 *.sqlite-wal
 *.sqlite-journal
