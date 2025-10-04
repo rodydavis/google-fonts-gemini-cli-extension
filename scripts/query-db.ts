@@ -105,13 +105,27 @@ export function getDatabaseStats() {
 
 // For CLI usage
 function main() {
-  const stats = getDatabaseStats();
-  console.log(`Fonts: ${stats.fonts}`);
-  console.log(`Variants: ${stats.variants}`);
-  console.log(`Icons: ${stats.icons}`);
+  const command = process.argv[2];
+  const arg = process.argv[3];
+
+  if (command === "search-fonts" && arg) {
+    const fonts = searchFonts({ name: arg });
+    console.log(JSON.stringify(fonts));
+  } else if (command === "search-icons" && arg) {
+    const icons = searchIcons({ name: arg });
+    console.log(JSON.stringify(icons));
+  } else {
+    const stats = getDatabaseStats();
+    console.log(`Fonts: ${stats.fonts}`);
+    console.log(`Variants: ${stats.variants}`);
+    console.log(`Icons: ${stats.icons}`);
+  }
 }
 
 // Only run main when script is executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  import.meta.url.startsWith("file://") &&
+  process.argv[1] === fileURLToPath(import.meta.url)
+) {
   main();
 }

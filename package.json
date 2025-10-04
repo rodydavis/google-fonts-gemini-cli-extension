@@ -10,7 +10,8 @@
     "update-db": "node scripts/update-db.ts",
     "query-db": "node scripts/query-db.ts",
     "test:watch": "node --test --watch **/*.test.ts",
-    "test": "node --test **/*.test.ts"
+    "test": "node --test **/*.test.ts",
+    "update-icons": "node scripts/update-icons.ts"
   },
   "keywords": [],
   "author": "",

@@ -1,0 +1,16 @@
+name = "download-font"
+description = "Downloads a font family from Google Fonts."
+prompt = '''!{
+font_name="``"
+font_data=$(jq --arg name "$font_name" '.items[] | select(.family | ascii_downcase == ($name | ascii_downcase))' google-fonts.json)
+if [ -z "$font_data" ]; then
+  echo "Font not found."
+  exit 1
+fi
+mkdir -p "fonts/$font_name"
+echo "$font_data" | jq -r '.files | to_entries[] | "\(.key) \(.value)"' | while read -r variant url; do
+  echo "Downloading $font_name-$variant.ttf..."
+  curl -s -o "fonts/$font_name/$font_name-$variant.ttf" "$url"
+done
+echo "Download complete."
+}'''

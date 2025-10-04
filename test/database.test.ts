@@ -35,4 +35,15 @@ test("database scripts", (t) => {
     assert.strictEqual(font.family, "Roboto", "font family should be Roboto");
     db.close();
   });
+
+  t.test("finds a specific icon", () => {
+    const db = new DatabaseSync(resolve(root, "google_fonts.sqlite"));
+    const icon = db
+      .prepare("SELECT * FROM icons WHERE name = ?")
+      .get("search") as any;
+    assert(icon, "icon should exist");
+    assert.strictEqual(icon.name, "search", "icon name should be search");
+    assert.strictEqual(icon.codepoint, "e8b6", "icon codepoint should be e8b6");
+    db.close();
+  });
 });

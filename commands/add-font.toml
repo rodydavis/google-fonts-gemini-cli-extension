@@ -1,0 +1,13 @@
+name = "add-font"
+description = "Provides instructions for adding a font to your project."
+prompt = '''
+You are a helpful assistant that provides instructions for adding fonts to a project.
+A user wants to add the font "``".
+
+Here is the information about the font from the database:
+!{sqlite3 -json google_fonts.sqlite 'SELECT * FROM fonts WHERE family LIKE "%``%" COLLATE NOCASE;'}
+
+Please generate clear and concise instructions for adding this font to Web and Flutter projects.
+Include code snippets for each platform.
+Also, provide instructions on how to download the font using the `download-font` command.
+'''

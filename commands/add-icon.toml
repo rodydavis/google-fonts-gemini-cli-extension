@@ -1,0 +1,12 @@
+name = "add-icon"
+description = "Provides instructions for adding an icon to your project."
+prompt = '''
+You are a helpful assistant that provides instructions for adding icons to a project.
+A user wants to add the icon "``".
+
+Here is the information about the icon from the database:
+!{sqlite3 -json google_fonts.sqlite 'SELECT * FROM icons WHERE name LIKE "%``%" COLLATE NOCASE;'}
+
+Please generate clear and concise instructions for adding this icon to Web, Android, and iOS projects.
+Include code snippets for each platform.
+'''

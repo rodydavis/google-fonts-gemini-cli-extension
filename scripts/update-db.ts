@@ -28,6 +28,7 @@ interface Icon {
   name: string;
   category: string;
   variants: IconVariant[];
+  codepoint?: string;
 }
 
 async function main() {
@@ -102,7 +103,8 @@ async function main() {
     CREATE TABLE IF NOT EXISTS icons (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
-      category TEXT
+      category TEXT,
+      codepoint TEXT
     )
   `);
 
@@ -253,7 +255,7 @@ async function main() {
   const icons: Icon[] = JSON.parse(iconsJson);
 
   const insertIcon = db.prepare(
-    "INSERT OR IGNORE INTO icons (name, category) VALUES (?, ?)",
+    "INSERT OR IGNORE INTO icons (name, category, codepoint) VALUES (?, ?, ?)",
   );
   const selectIcon = db.prepare("SELECT id FROM icons WHERE name = ?");
   const insertIconVariant = db.prepare(
@@ -261,10 +263,10 @@ async function main() {
   );
 
   for (const icon of icons) {
-    const { name, category, variants } = icon;
+    const { name, category, variants, codepoint } = icon;
     let icon_id = selectIcon.get(name) as { id: number } | undefined;
     if (!icon_id) {
-      const info = insertIcon.run(name, category);
+      const info = insertIcon.run(name, category, codepoint ?? null);
       icon_id = { id: info.lastInsertRowid as number };
     }
 
