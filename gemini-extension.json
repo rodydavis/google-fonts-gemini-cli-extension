@@ -1,5 +1,12 @@
 {
   "name": "google-fonts",
   "version": "1.0.0",
-  "contextFileName": "GEMINI.md"
+  "contextFileName": "GEMINI.md",
+  "mcpServers": {
+    "nodeServer": {
+      "command": "node",
+      "args": ["${extensionPath}${/}dist${/}scripts${/}server.js"],
+      "cwd": "${extensionPath}"
+    }
+  }
 }
